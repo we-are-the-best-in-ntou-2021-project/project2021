@@ -4,7 +4,7 @@ Independent Study
 we are the best  
 ## Rules of Data Path in Different Theme
 ### < Topic 1 > distinguishing different actions  
-the rule of data path:  dataset/action_name(eg. upstair)/subject_number    
+#### the rule of data path:  dataset/action_name(eg. upstair)/subject_number    
   
 ### < Topic 2 > recognizationing different people with single action  
 the rule of data path:  dataset/action_name(eg. upstair)/subject_number   
