@@ -28,9 +28,12 @@ class JasonDecoder():
             # print('No')
             return False
     
-    
-    # public function
+    """
     # decoding json files to numpy array
+    output: 
+        dataset: 4dim np.array, shape=(number of data, frame, nodes,  2)
+        labels: 1d list, shape=(numbr of data)
+    """
     def decoding(self,):
         labels = list()
         label = 0
@@ -70,10 +73,10 @@ class JasonDecoder():
         return dataset, labels
 
 
-#以下為使用範例
+#example
 """
 actions = ['down', 'phone', 'raise', 'run']
-a = JasonDecoder(dataset_name=actions, frame=50)
-dataset, labels = a.decoding()
+jasondecoder = JasonDecoder(dataset_name=actions, frame=50)    
+dataset, labels = jasondecoder.decoding()
 """
         
