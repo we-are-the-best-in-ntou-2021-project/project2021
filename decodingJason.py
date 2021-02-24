@@ -40,7 +40,7 @@ class JasonDecoder():
     """
     def decoding(self, ):
         #path = glob('./%s/*' % (self.dataset_name))
-        path = glob('D:\openpose-1.7.0-binaries-win64-gpu-python3.7-flir-3d_recommended\openpose\output_jsons\*')
+        #path = glob('D:\openpose-1.7.0-binaries-win64-gpu-python3.7-flir-3d_recommended\openpose\output_jsons\*')
         
         # int number_of_2d_array
         number_of_2d_array = len(path) // self.frame
@@ -63,9 +63,9 @@ class JasonDecoder():
         # shape of array = (number_of_2d_array, frame, nodes=25) 
         return data_X, data_Y, data_ACC, number_of_2d_array
     
-
+"""
 if __name__ == '__main__':    
     a = JasonDecoder('sd')
     X, Y, ACC, number = a.decoding()
-
+"""
         
