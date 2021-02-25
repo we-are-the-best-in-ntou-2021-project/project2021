@@ -14,7 +14,7 @@
   object_name = de.JasonDecoder(dataset_name, frame, shift, lowbound, nodes=25)    
   dataset, labels = object_name.decoding()  
 ### input:  
-* dataset_name: list, store the names of actions that's actions_names  
+* dataset_name: list, store the names of actions(actions_names)  
 * frame:  int, how many frames to be a data.  
 * shift:  int, (default=1, means that 第1種的切割方式), 若要用第2種的切割方式則需要賦值(*不要賦予frame的倍數，不然將沒有意義*)  
   * e.g. 假設此影片共有200偵(0~199)，呼叫此功能, frame設30，shift設50則，會切出的資料有:  
