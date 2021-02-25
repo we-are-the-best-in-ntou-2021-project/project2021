@@ -34,12 +34,12 @@ class JasonDecoder():
         labels = list()
         label = 0
         for action in self.dataset_name:
-            tmp_path = glob(".\%s\%s\*" % ("data", action))  
+            tmp_path = glob("./%s/%s/*" % ("data", action))  
             #path = glob('D:\openpose-1.7.0-binaries-win64-gpu-python3.7-flir-3d_recommended\openpose\output_jsons\*')
             n_person = 0
             for person in tmp_path: 
                 #print(person)
-                path = glob(person+"\*")
+                path = glob(person+"/*")
                 s = 0
                 number_of_3d_array = (len(path)-s) // self.frame  #number_of_data_of_one_vedio
                 
@@ -78,12 +78,12 @@ class JasonDecoder():
         labels = list()
         label = 0
         for action in self.dataset_name:
-            tmp_path = glob(".\%s\%s\*" % ("data", action))  
+            tmp_path = glob("./%s/%s/*" % ("data", action))  
             #path = glob('D:\openpose-1.7.0-binaries-win64-gpu-python3.7-flir-3d_recommended\openpose\output_jsons\*')
             n_person = 0
             for person in tmp_path:
                 #print(person)
-                path = glob(person+"\*")
+                path = glob(person+"/*")
                 number_of_3d_array = len(path) // self.frame  #number_of_data_of_one_vedio
                 datas = np.zeros((number_of_3d_array, self.frame, self.nodes, 2))
                 a = 0
@@ -122,8 +122,9 @@ class JasonDecoder():
             
             
 #以下為使用範例
+"""
 actions = ['down', 'phone', 'raise', 'run']
 a = JasonDecoder(dataset_name=actions, frame=50, shift=2)
 dataset, labels = a.decoding()
-
+"""
         
