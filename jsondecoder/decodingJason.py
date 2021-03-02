@@ -8,12 +8,13 @@ from glob import glob
 
 class JasonDecoder():
     
-    def __init__(self, dataset_name, frame, shift=1, lowbound=0,nodes=25):
+    def __init__(self, dataset_name, frame, dirname, shift=1, lowbound=0,nodes=25):
         self.dataset_name = dataset_name  # the list of actions (eg. [run, walk, upstair, downstair, ...])
         self.frame = frame  # how many frames to be one data
         self.nodes = nodes  # 25 node(joints)
         self.shift = shift  # the shift of started index in each vedio(inoder to create more data) 
         self.lowbound = lowbound  # the lowbound of the number of creating data in each video
+        self.dirname = dirname
         
     # private function(don't call it)
     def __load_a_json(self, filename, datas, a, b):
@@ -34,7 +35,7 @@ class JasonDecoder():
         labels = list()
         label = 0
         for action in self.dataset_name:
-            tmp_path = glob("./%s/%s/*" % ("json_dataset", action))  
+            tmp_path = glob("./%s/%s/*" % (self.dirname, action))  
             #path = glob('D:\openpose-1.7.0-binaries-win64-gpu-python3.7-flir-3d_recommended\openpose\output_jsons\*')
             n_person = 0
             for person in tmp_path: 
@@ -78,7 +79,7 @@ class JasonDecoder():
         labels = list()
         label = 0
         for action in self.dataset_name:
-            tmp_path = glob("./%s/%s/*" % ("json_dataset", action))  
+            tmp_path = glob("./%s/%s/*" % (self.dirname, action))  
             #path = glob('D:\openpose-1.7.0-binaries-win64-gpu-python3.7-flir-3d_recommended\openpose\output_jsons\*')
             n_person = 0
             for person in tmp_path:
