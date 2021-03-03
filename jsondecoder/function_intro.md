@@ -6,7 +6,7 @@
   
 ## 使用說明:
 ### data資料夾的存放路徑:
-./data/actions_names/persone_names/person_names_0000000xxxxx_xxxxxxx.json  
+./dirname/actions_names/persone_names/person_names_0000000xxxxx_xxxxxxx.json  
 可以處理很多影片，只要用上述的方式存放json檔們，即可
 ### example
   import decodingJason as de  
