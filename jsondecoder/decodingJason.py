@@ -8,7 +8,7 @@ from glob import glob
 
 class JasonDecoder():
     
-    def __init__(self, dataset_name, frame, dirname, shift=1, lowbound=0,nodes=25):
+    def __init__(self, dataset_name, frame, dirname, shift=0, lowbound=0,nodes=25):
         self.dataset_name = dataset_name  # the list of actions (eg. [run, walk, upstair, downstair, ...])
         self.frame = frame  # how many frames to be one data
         self.nodes = nodes  # 25 node(joints)
@@ -67,6 +67,8 @@ class JasonDecoder():
                     else:
                         dataset = np.concatenate((dataset, datas))
                     s = s + self.shift
+                    if s == self.frame:
+                        break
                     number_of_3d_array = (len(path)-s) // self.frame
                 
                 n_person = n_person + 1
@@ -115,7 +117,7 @@ class JasonDecoder():
         labels: 1d list, shape=(number of data)
     """
     def decoding(self,):
-        if self.shift != 1:
+        if self.shift != 0:
             dataset, labels = self.__interval_decoding()
         else:
             dataset, labels = self.__serial_decoding()
