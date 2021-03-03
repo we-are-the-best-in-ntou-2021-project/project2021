@@ -17,7 +17,7 @@
 * dataset_name: list, store the names of actions(actions_names)  
 * frame:  int, how many frames to be a data.  
 * dirname: the name of root directory(e.g. train_dataset, test_dataset) 
-* shift:  int, (default=1, means that 第1種的切割方式), 若要用第2種的切割方式則需要賦值(*不要賦予frame的倍數，不然將沒有意義*)  
+* shift:  int, (default=0, means that 第1種的切割方式), 若要用第2種的切割方式則需要賦值(*不要賦予frame的倍數，不然將沒有意義*)  
   * e.g. 假設此影片共有200偵(0~199)，呼叫此功能, frame設30，shift設50則，會切出的資料有:  
   * 0-29, 30-59, 60-89, 90-119, 120-149, 150-179,   
   * 50-79, 80-109, 110-139, 140-169, 170-199,   
