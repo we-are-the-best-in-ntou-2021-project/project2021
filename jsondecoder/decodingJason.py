@@ -67,6 +67,8 @@ class JasonDecoder():
                         dataset = np.concatenate((dataset, datas))
                         #print(dataset[0][0])
                     s = s + self.shift
+                    if s%self.frame == 0:
+                        break
                     number_of_3d_array = (len(path)-s) // self.frame
                 
                 n_person = n_person + 1
