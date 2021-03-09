@@ -3,7 +3,9 @@ import keras
 from keras.models import Sequential
 from keras.layers import Conv1D,MaxPooling1D,BatchNormalization,Flatten,Dense,Activation,Dropout
 import numpy as np
+import pandas as pd
 from sklearn.model_selection import train_test_split
+
 
 import os
 from tensorflow.compat.v1 import ConfigProto
@@ -56,11 +58,14 @@ model.compile(loss='binary_crossentropy',
 print(data.shape,labels.shape)
 print(data_test.shape,labels_test.shape)
 
-train_history = model.fit(data,labels,batch_size=16,epochs=50,verbose=1,validation_split=0.2)
+train_history = model.fit(data,labels,batch_size=16,epochs=30,verbose=1,validation_split=0.2)
 score = model.evaluate(data_test,labels_test,verbose=1)
+predictions = model.predict_classes(data_test)
 
 print('Test loss: ',score[0])
 print('Test accuracy: ',score[1])
+labels_test = np.argmax(labels_test,axis=1)
+print(predictions)
+print(labels_test)
+print(pd.crosstab(labels_test,predictions,rownames=['label'],colnames=['predict']))
 # model.summary()
-          
-
