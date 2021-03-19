@@ -8,13 +8,14 @@ from glob import glob
 
 class JasonDecoder():
     
-    def __init__(self, dataset_name, frame, dirname,shift=1, lowbound=0,nodes=25):
+    def __init__(self, dataset_name, frame, dirname, shift=0, lowbound=0,nodes=25):
         self.dataset_name = dataset_name  # the list of actions (eg. [run, walk, upstair, downstair, ...])
         self.frame = frame  # how many frames to be one data
         self.nodes = nodes  # 25 node(joints)
         self.shift = shift  # the shift of started index in each vedio(inoder to create more data) 
         self.lowbound = lowbound  # the lowbound of the number of creating data in each video
         self.dirname = dirname
+        
     # private function(don't call it)
     def __load_a_json(self, filename, datas, a, b):
         try:
@@ -26,6 +27,7 @@ class JasonDecoder():
                 datas[a][b] = np.concatenate((X,Y)).T
                 return True
         except:
+            # print('No')
             return False
     
 
@@ -37,6 +39,7 @@ class JasonDecoder():
             #path = glob('D:\openpose-1.7.0-binaries-win64-gpu-python3.7-flir-3d_recommended\openpose\output_jsons\*')
             n_person = 0
             for person in tmp_path: 
+                #print(person)
                 path = glob(person+"/*")
                 s = 0
                 number_of_3d_array = (len(path)-s) // self.frame  #number_of_data_of_one_vedio
@@ -47,8 +50,7 @@ class JasonDecoder():
                         labels.append(label)
                     a = 0
                     b = 0
-                    i = s
-                    
+                    i = s     
                     while i < len(path):
                         filename = path[i]
                         if a >= number_of_3d_array:
@@ -62,10 +64,8 @@ class JasonDecoder():
 
                     if(n_person == label == s == 0):
                         dataset = np.array(datas, copy = True) 
-                        #print(dataset[0][0])
                     else:
                         dataset = np.concatenate((dataset, datas))
-                        #print(dataset[0][0])
                     s = s + self.shift
                     if s%self.frame == 0:
                         break
@@ -73,7 +73,7 @@ class JasonDecoder():
                 
                 n_person = n_person + 1
             label = label + 1
-            
+
         return dataset, labels
     
     
@@ -81,21 +81,21 @@ class JasonDecoder():
         labels = list()
         label = 0
         for action in self.dataset_name:
-            tmp_path = glob("./%s/%s/*" % ("dataset", action))  
+            tmp_path = glob("./%s/%s/*" % (self.dirname, action))  
             #path = glob('D:\openpose-1.7.0-binaries-win64-gpu-python3.7-flir-3d_recommended\openpose\output_jsons\*')
             n_person = 0
             for person in tmp_path:
+                #print(person)
                 path = glob(person+"/*")
                 number_of_3d_array = len(path) // self.frame  #number_of_data_of_one_vedio
-                datas = np.zeros((number_of_3d_array, self.frame, self.nodes, 2))
                 for _ in range(number_of_3d_array):
                     labels.append(label)
+                datas = np.zeros((number_of_3d_array, self.frame, self.nodes, 2))
                 a = 0
                 b = 0
                 for filename in path:
                     if a >= number_of_3d_array:
                         break
-      
                     if(self.__load_a_json(filename, datas, a, b) == True):
                         b = b + 1
                         if b >= self.frame:
@@ -117,15 +117,16 @@ class JasonDecoder():
         labels: 1d list, shape=(number of data)
     """
     def decoding(self,):
-        if self.shift != 1:
+        if self.shift != 0:
             dataset, labels = self.__interval_decoding()
         else:
             dataset, labels = self.__serial_decoding()
         return dataset, labels
-            
-            
+   
+    
 #以下為使用範例
-# action_name = ["down","up","walk","run","raise","phone"]
-# a = JasonDecoder(dataset_name=action_name, frame=50, shift=1)
-# dataset, labels = a.decoding()
-        
+"""
+actions = ['down', 'mix', 'raise', 'run']
+a = JasonDecoder(dataset_name=actions, frame=150, dirname = 'json_data/front',shift=50)
+dataset, labels = a.decoding()
+"""
