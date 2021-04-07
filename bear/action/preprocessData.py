@@ -15,18 +15,22 @@ labels_test = load('labels_test.npy')
 """
     
 # 就是第i+1偵與第i之向量, 此shape = (data資料量, frame-1, 25,2)
-def make_accel(data):
-    accel = data[:,1]-data[:,0]
-    accel = accel.reshape(accel.shape[0],1,accel.shape[1],-1)
+def make_velocity(data):
+    velocity = np.zeros((data.shape[0],1,data.shape[2],data.shape[3]))
     r = data.shape[1]-1
-    for i in range(1,r):
+    for i in range(0,r):
         tmp = data[:,i+1]-data[:,i]
         tmp = tmp.reshape(tmp.shape[0],1,tmp.shape[1],-1)
-        accel = np.concatenate((accel, tmp),axis=1)
+        velocity = np.concatenate((velocity, tmp),axis=1)
+    return velocity*30
+
+def make_accel(data):
+    velocity = make_velocity(data)
+    accel = make_velocity(velocity)
     return accel
     
 # 以第0偵當作基準點，再去算每一偵與基準點之差值(振福), shape = (data資料量, frame, 25, 2)
-def make_move(data):
+def make_offset(data):
     move = np.zeros((data.shape[0],1,25,2))
     for i in range(1,data.shape[1]):
         tmp = data[:,i]-data[:,0]
@@ -67,3 +71,15 @@ def make_angle(data):
     angle = np.concatenate((angle,tmp),axis = -1)
     angle = angle*100
     return angle
+
+
+def send_mes_to_bot(mes):
+    import requests
+
+    r = requests.post(
+        f"https://api.telegram.org/bot1706687838:AAGPTV4GnjsgB69zq6I1t7c97HUzRMzJTS8/sendMessage",
+        json={
+        "chat_id":"1378236226",
+        "text":mes,
+        },
+    )

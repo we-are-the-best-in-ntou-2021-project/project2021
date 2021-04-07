@@ -13,6 +13,8 @@ import preprocessData as pre
 import os
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
+import requests
+
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ['CUDA_VISIBLE_DEVICES'] = "0,1" #選擇哪一塊gpu
 config = ConfigProto()
@@ -23,27 +25,24 @@ session = InteractiveSession(config=config)
 
 
 
-action_name = ["down","up","walk","run","raise"]
-action_name_test = ["down_test","up_test","walk_test","run_test","raise_test"]
-action_mix = ["mix"]
+#action_name = ["down","up","walk","run","raise"]
+#action_name_test = ["down_test","up_test","walk_test","run_test","raise_test"]
+#action_mix = ["mix"]
 
-dirname = "json_data/front"
-frame = 50
+#dirname = "json_data/front"
+#frame = 50
 
-data = load('data.npy')
-angle = pre.make_angle(data)
-data_test = load('data_test.npy')
-angle_test = pre.make_angle(data_test)
-labels = load('labels.npy')
-labels_test = load('labels_test.npy')
-data = pre.make_move(data)
-data_test = pre.make_move(data_test)
+data = load('./data/json_data/action/json_data_seperate/json_data_seperate_senior/data.npy')
+#angle = pre.make_angle(data)
+data_test = load('./data/json_data/action/json_data_seperate/json_data_seperate_senior/data_test.npy')
+#angle_test = pre.make_angle(data_test)
+labels = load('./data/json_data/action/json_data_seperate/json_data_seperate_senior/labels.npy')
+labels_test = load('./data/json_data/action/json_data_seperate/json_data_seperate_senior/labels_test.npy')
+#data = pre.make_offset(data)
+#data_test = pre.make_offset(data_test)
+data = pre.make_velocity(data)
+data_test = pre.make_velocity(data_test)
 
-"""
-c = de.JasonDecoder(dataset_name=action_mix,frame=frame,dirname=dirname,shift=frame)
-mix_data,mix_labels = c.decoding()
-mix_labels = np.array(mix_labels)
-"""
 
 index=np.arange(data.shape[0])
 np.random.shuffle(index) 
@@ -80,7 +79,7 @@ else:
   model.add(BatchNormalization())
   model.add(Flatten())
   model.add(Dropout(0.5))
-  model.add(Dense(3))
+  model.add(Dense(5))
   model.add(Activation('softmax'))
 
   # model.compile(loss='categorical_crossentropy',
@@ -102,11 +101,11 @@ else:
     plt.plot(train_history.history[train])
     plt.plot(train_history.history[validation])
     
-
-  train_history = model.fit(angle,labels,batch_size=16,epochs=300,verbose=1,validation_split=0.2)
+  epochs = 200
+  train_history = model.fit(data,labels,batch_size=16,epochs=epochs,verbose=1,validation_split=0.2)
   # model.save("model_weight/model.h5")
   
-  score = model.evaluate(angle_test,labels_test,verbose=0)
+  score = model.evaluate(data_test,labels_test,verbose=0)
   print(score)
   
   predictions = model.predict(data_test)
@@ -118,5 +117,8 @@ else:
   print(pd.crosstab(labels_test,predictions,rownames=['label'],colnames=['predict']))
   labels_test = keras.utils.to_categorical(labels_test)
   show_train_history(train_history,'accuracy','val_accuracy')
-
-
+  
+  info = "epochs:" + str(epochs) +"    c64c64m3c128c128m2d5"
+  pre.send_mes_to_bot(info)
+  pre.send_mes_to_bot(score)
+  
