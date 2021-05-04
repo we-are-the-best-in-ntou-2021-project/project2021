@@ -72,20 +72,20 @@ def make_angle(data):
     return angle
 
 def make_arm_rate(data):
-    left = np.zeros((50))
-    right = np.zeros((50))
-    for i in range(0,49):
-        left[i] = np.linalg.norm((data[500][i][2]-data[500][i][3]))
-        right[i] = np.linalg.norm((data[500][i][5]-data[500][i][6]))
-    arm = left/right
-    return arm
+    left = np.zeros((data.shape[0],data.shape[1]))
+    right = np.zeros((data.shape[0],data.shape[1]))
+    for i in range(0,data.shape[0]):
+        for j in range(1,data.shape[1]):
+            left[i,j] = np.linalg.norm((data[i,j,2]-data[i,j,3]))
+            right[i,j] = np.linalg.norm((data[i,j,5]-data[i,j,6]))
+    return (left/right)
 
 
 def make_leg_rate(data):
-    left = np.zeros((50))
-    right = np.zeros((50))
-    for i in range(0,49):
-        left[i] = np.linalg.norm((data[500][i][9]-data[500][i][10]))
-        right[i] = np.linalg.norm((data[500][i][12]-data[500][i][13]))
-    leg = left/right
-    return leg
+    left = np.zeros((data.shape[0],data.shape[1]))
+    right = np.zeros((data.shape[0],data.shape[1]))
+    for i in range(0,data.shape[0]):
+        for j in range(1,data.shape[1]):
+            left[i,j] = np.linalg.norm((data[i,j,9]-data[i,j,10]))
+            right[i,j] = np.linalg.norm((data[i,j,12]-data[i,j,13]))
+    return (left/right)
