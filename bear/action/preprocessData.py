@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Mar 30 01:44:41 2021
-
 @author: User
 """
 import numpy as np
@@ -28,7 +27,7 @@ def make_accel(data):
     velocity = make_velocity(data)
     accel = make_velocity(velocity)
     return accel
-    
+
 # 以第0偵當作基準點，再去算每一偵與基準點之差值(振福), shape = (data資料量, frame, 25, 2)
 def make_offset(data):
     move = np.zeros((data.shape[0],1,25,2))
@@ -72,14 +71,21 @@ def make_angle(data):
     angle = angle*100
     return angle
 
+def make_arm_rate(data):
+    left = np.zeros((50))
+    right = np.zeros((50))
+    for i in range(0,49):
+        left[i] = np.linalg.norm((data[500][i][2]-data[500][i][3]))
+        right[i] = np.linalg.norm((data[500][i][5]-data[500][i][6]))
+    arm = left/right
+    return arm
 
-def send_mes_to_bot(mes):
-    import requests
 
-    r = requests.post(
-        f"https://api.telegram.org/bot1706687838:AAGPTV4GnjsgB69zq6I1t7c97HUzRMzJTS8/sendMessage",
-        json={
-        "chat_id":"1378236226",
-        "text":mes,
-        },
-    )
+def make_leg_rate(data):
+    left = np.zeros((50))
+    right = np.zeros((50))
+    for i in range(0,49):
+        left[i] = np.linalg.norm((data[500][i][9]-data[500][i][10]))
+        right[i] = np.linalg.norm((data[500][i][12]-data[500][i][13]))
+    leg = left/right
+    return leg
