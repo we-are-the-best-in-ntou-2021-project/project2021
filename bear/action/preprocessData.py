@@ -75,7 +75,7 @@ def make_arm_rate(data):
     left = np.zeros((data.shape[0],data.shape[1]))
     right = np.zeros((data.shape[0],data.shape[1]))
     for i in range(0,data.shape[0]):
-        for j in range(1,data.shape[1]):
+        for j in range(0,data.shape[1]):
             left[i,j] = np.linalg.norm((data[i,j,2]-data[i,j,3]))
             right[i,j] = np.linalg.norm((data[i,j,5]-data[i,j,6]))
     return (left/right)
@@ -85,7 +85,7 @@ def make_leg_rate(data):
     left = np.zeros((data.shape[0],data.shape[1]))
     right = np.zeros((data.shape[0],data.shape[1]))
     for i in range(0,data.shape[0]):
-        for j in range(1,data.shape[1]):
+        for j in range(0,data.shape[1]):
             left[i,j] = np.linalg.norm((data[i,j,9]-data[i,j,10]))
             right[i,j] = np.linalg.norm((data[i,j,12]-data[i,j,13]))
     return (left/right)
