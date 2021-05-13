@@ -2,12 +2,12 @@
 distangling GAN
 """
 
-import decodingJason as de
 import keras
-from keras.models import Sequential, load_model
+from keras.models import Sequential, Model
 from keras.layers import Conv1D, MaxPooling1D, BatchNormalization, Flatten
 from keras.layers import Input, Dense, Activation, Dropout, Concatenate
 from keras.optimizers import Adam
+from keras.layers.advanced_activations import LeakyReLU
 import numpy as np
 import pandas as pd
 #from sklearn.model_selection import train_test_split
@@ -138,7 +138,7 @@ class distanglingGAN():
         idx = np.random.permutation(Y.shape[0])
         idx = idx[:n_batch]
         X_rand0 = X[idx]
-        X_rand0 = X_rand.reshape((X_rand0.shape[0],X_rand0.shape[1],-1))
+        X_rand0 = X_rand0.reshape((X_rand0.shape[0],X_rand0.shape[1],-1))
         # X_rand0: input0
         Y_rand0 = Y_p[idx]
         Y_rand0 = keras.utils.to_categorical(Y_rand0)
@@ -184,7 +184,7 @@ class distanglingGAN():
             
             ## update classifier
             f0 = self.enconder.predict(X_rand0)
-            self.classifier.train_on_batch(X_rand0, Y_rand0)
+            self.classifier.train_on_batch(f0, Y_rand0)
             
             ## update discriminator
             ### same
@@ -223,4 +223,3 @@ class distanglingGAN():
 
 if __name__ == '__main__':
     pass
-  
