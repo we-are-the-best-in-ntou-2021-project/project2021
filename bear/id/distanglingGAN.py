@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 #from sklearn.model_selection import train_test_split
 import tensorflow as tf
-from numpy import load
+from numpy import load, save
 import pylab
 import matplotlib.pyplot as plt
 import preprocessData as pre
@@ -30,23 +30,25 @@ session = InteractiveSession(config=config)
 """
 
 class distanglingGAN():
-    def __init__(self, frame = 70, dim = 50, num_labels = 6, num_class = 4):
+    def __init__(self, frame = 50, dim = 50, num_labels = 6, num_class = 4):
         self.input_shape = (frame, dim)
         self.latent_dim = 128
         self.num_class = num_class
         self.num_labels = num_labels
         
         # Build the encoder(generator)
-        self.enconder = self.__encoder()
+        self.encoder = self.__encoder()
+        #self.encoder.compile(loss='binary_crossentropy', optimizer='Adam')
         # Build the discriminator
-        self.discriminator = self.__discriminator()
+        self.discriminator = self.__discriminator()   
+        self.discriminator.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.0002, beta_1=0.5), loss_weights=[0.5],metrics=['accuracy'])
         # Build the classifier
         self.classifier = self.__classifier()
+        self.classifier.compile(loss='categorical_crossentropy', optimizer=Adam(lr=0.0002, beta_1=0.5), loss_weights=[0.5],metrics=['accuracy'])
         # For the combined model we will only train the encoder(generator)
         self.combined = self.__combined(self.encoder, self.discriminator, self.classifier)
-        
-    
-
+        self.combined.compile(loss=['categorical_crossentropy', 'binary_crossentropy'], loss_weights=[3, 1], 
+                      optimizer=Adam(lr=0.0002, beta_1=0.5))
 
     def __encoder(self, ):
         
@@ -68,6 +70,7 @@ class distanglingGAN():
         model.add(Dropout(0.3))
         model.add(Dense(self.latent_dim))
         
+        
         return model
         
     def __discriminator(self, ):
@@ -82,7 +85,6 @@ class distanglingGAN():
 
         model.add(Dense(1, activation='sigmoid'))
         #model.summary()
-        model.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.0002, beta_1=0.5), loss_weights=[0.5])
         
         return model
  
@@ -98,8 +100,7 @@ class distanglingGAN():
         model.add(LeakyReLU(alpha=0.2))
 
         model.add(Dense(self.num_class, activation='softmax'))
-        #model.summary()
-        model.compile(loss='categorical_crossentropy', optimizer=Adam(lr=0.0002, beta_1=0.5), loss_weights=[0.5])
+        #model.summar()
         
         return model
         
@@ -123,20 +124,26 @@ class distanglingGAN():
         C_out = C(feature_C)
         
         model = Model([input0, input1, input2], [C_out, D_out])
-        model.compile(loss=['categorical_crossentropy', 'binary_crossentropy'], loss_weights=[3, 1], 
-                      optimizer=Adam(lr=0.0002, beta_1=0.5))
         
         return model
         
     
     def __predict(self, X_test, Y_test):
-        pass
+        
+        #reshape data
+        X_test = X_test.reshape((X_test.shape[0],X_test.shape[1],-1))
+        Y_test = keras.utils.to_categorical(Y_test)        
+        # predict
+        Feature = self.encoder.predict(X_test)
+        a = self.classifier.evaluate(Feature,Y_test,verbose=0)
+        print(a)
+        
     
-    def __random_select(self,  X, Y, Y_p, n_batch, idx_p, idx_a):
+    def __random_select(self,  X, Y, Y_p, batch_size, idx_p, idx_a):
         
         # output0 for classifier (labels = rabbit:0, bear:1, haha:2, senior:3)
         idx = np.random.permutation(Y.shape[0])
-        idx = idx[:n_batch]
+        idx = idx[:batch_size]
         X_rand0 = X[idx]
         X_rand0 = X_rand0.reshape((X_rand0.shape[0],X_rand0.shape[1],-1))
         # X_rand0: input0
@@ -144,82 +151,103 @@ class distanglingGAN():
         Y_rand0 = keras.utils.to_categorical(Y_rand0)
         
         # output1(same person different actions) for discriminator (labels=True)
-        num_person_list = np.random.multinomial(n_batch//2, np.ones(4)/4,size=1)[0]
+        num_person_list = np.random.multinomial(batch_size//2, np.ones(4)/4,size=1)[0]
         idx = np.concatenate([np.random.choice(idx_p[i][0], num_person_list[i]*2)for i in range(4)])
+        #idx.shape= (batch_size, )
         X_rand1 = X[idx]
-        X_rand1 = X_rand1.reshape((2,X_rand1.shape[0],X_rand1.shape[1],X_rand1.shape[2],X_rand1.shape[3]))
+        #X_rand1.shape = (64,50,25,2)
+        input1 = X_rand1[0::2].reshape((1,batch_size//2,X_rand1.shape[1],X_rand1.shape[2]*X_rand1.shape[3]))
+        input2 = X_rand1[1::2].reshape((1,batch_size//2,X_rand1.shape[1],X_rand1.shape[2]*X_rand1.shape[3]))
+        X_rand1 = np.concatenate((input1,input2),axis=0)
         # X_rand1[0,:]: input1;  X_rand1[1,:]: input2
-        #Y_rand1 = np.ones((n_batch//2))
+        #Y_rand1 = np.ones((batch_size//2))
     
         
         # output2(same actions different person) for discriminator (labels=False)
-        action_num = 5
-        num_action_list = np.random.multinomial(n_batch//2, np.ones(action_num)/action_num,size=1)[0]
+        action_num = 3
+        num_action_list = np.random.multinomial(batch_size//2, np.ones(action_num)/action_num,size=1)[0]
         idx = np.concatenate([np.random.choice(idx_a[i][0], num_action_list[i]*2)for i in range(action_num)])
         X_rand2 = X[idx]
-        X_rand2 = X_rand2.reshape((2, X_rand2.shape[0], X_rand2.shape[1], X_rand2.shape[2], X_rand2.shape[3]))
+        #X_rand1.shape = (64,50,25,2)
+        input1 = X_rand2[0::2].reshape((1,batch_size//2,X_rand2.shape[1],X_rand2.shape[2]*X_rand2.shape[3]))
+        input2 = X_rand2[1::2].reshape((1,batch_size//2,X_rand2.shape[1],X_rand2.shape[2]*X_rand2.shape[3]))
+        X_rand2 = np.concatenate((input1,input2),axis=0)
         # X_rand2[0,:]: input1; X_rand2[1,:]: input2
-        #Y_rand2 = np.zeros((n_batch//2))
+        #Y_rand2 = np.zeros((batch_size//2))
 
         return X_rand0, Y_rand0, X_rand1, X_rand2
         
     
     
-    def train(self, X_train, Y_train, Y_p_train, X_test, Y_test, Y_p_test, n_epochs = 50, n_batch = 64):
+    def train(self, X_train, Y_train, Y_p_train, X_test, Y_test, Y_p_test, n_batch, batch_size):
         
         people_list = [0,1,2,3]
-        actions_list = [0,1,2,3,4]
+        actions_list = [0,1,2]
         idx_p = [np.where(Y_p_train==i)for i in people_list]
         idx_a = [np.where(Y_train==i)for i in actions_list]
-        Y_rand1 = np.ones((n_batch//2))
-        Y_rand2 = np.zeros((n_batch//2))
+        Y_rand1 = np.ones((batch_size//2))
+        Y_rand2 = np.zeros((batch_size//2))
         
-        for epoch in n_epochs:
+        for batch in range(n_batch):
             
             # randomly select some data to train classifier and discriminator
-            X_rand0, Y_rand0, X_rand1, X_rand2 = self.__random_select(X_train, Y_train, Y_p_train, n_batch, idx_p, idx_a)
-            X_rand0.reshape((X_rand0.shape[0],X_rand0.shape[1],-1))
-            X_rand1.reshape((X_rand1.shape[0],X_rand1.shape[1],-1))
-            X_rand2.reshape((X_rand2.shape[0],X_rand2.shape[1],-1))
+            X_rand0, Y_rand0, X_rand1, X_rand2 = self.__random_select(X_train, Y_train, Y_p_train, batch_size, idx_p, idx_a)
             
             ## update classifier
-            f0 = self.enconder.predict(X_rand0)
-            self.classifier.train_on_batch(f0, Y_rand0)
+            f0 = self.encoder.predict(X_rand0)
+            c_loss = self.classifier.train_on_batch(f0, Y_rand0)
             
             ## update discriminator
             ### same
-            same1 = self.enconder.predict(X_rand1[0])
-            same2 = self.enconder.predict(X_rand1[1])
+            same1 = self.encoder.predict(X_rand1[0])
+            same2 = self.encoder.predict(X_rand1[1])
             same = np.hstack((same1,same2))
-            self.classifier.train_on_batch(same, Y_rand1)
+            d_loss0,d_acc0 = self.discriminator.train_on_batch(same, Y_rand1)
             ### different            
-            diff1 = self.enconder.predict(X_rand2[0])
-            diff2 = self.enconder.predict(X_rand2[1])
+            diff1 = self.encoder.predict(X_rand2[0])
+            diff2 = self.encoder.predict(X_rand2[1])
             diff = np.hstack((diff1,diff2))
-            self.classifier.train_on_batch(diff, Y_rand2)
+            d_loss1,d_acc1 = self.discriminator.train_on_batch(diff, Y_rand2)
             
             # randomly select some data to train generator only
-            input0, C_out, X_rand1, X_rand2 = self.__random_select(X_train, Y_train, Y_p_train, n_batch, idx_p, idx_a)
-            input0.reshape((input0.shape[0], input0.shape[1],-1))
-            X_rand1.reshape((X_rand1.shape[0],X_rand1.shape[1],-1))
-            X_rand2.reshape((X_rand2.shape[0],X_rand2.shape[1],-1))
-            same1 = self.enconder.predict(X_rand1[0])
-            same2 = self.enconder.predict(X_rand1[1])
-            diff1 = self.enconder.predict(X_rand2[0])
-            diff2 = self.enconder.predict(X_rand2[1])
+            input0, C_out, X_rand1, X_rand2 = self.__random_select(X_train, Y_train, Y_p_train, batch_size, idx_p, idx_a)
+            same1 = X_rand1[0]
+            same2 = X_rand1[1]
+            diff1 = X_rand2[0]
+            diff2 = X_rand2[1]
             input1 = np.concatenate((same1,diff1), axis=0)
             input2 = np.concatenate((same2,diff2), axis=0)
-            D_out = np.concatencate((Y_rand1,Y_rand2))           
+            D_out = np.concatenate((Y_rand1,Y_rand2))           
             ## update generator
             self.combined.train_on_batch([input0, input1, input2], [C_out, D_out])     
-        
             
+            d_loss = (d_loss1+d_loss0)/2
+            d_acc = (d_acc1+d_acc0)/2
+            #print ('batch: %d, [Discriminator :: d_loss: %f, accuracy: %f], [ Classifier :: loss: %f, acc: %f]' % (batch, d_loss, d_acc, c_loss[0],c_loss[1]))
             # predict model every 10 epochs
-            if(epoch % 10 == 0):
-                self.__predict(X_test, Y_test)  # unfinished
+            if((batch+1) % 100 == 0):
+                print ('batch: %d, [Discriminator :: d_loss: %f, accuracy: %f], [ Classifier :: loss: %f, acc: %f]' % (batch, d_loss, d_acc, c_loss[0],c_loss[1]))
+                self.__predict(X_test, Y_p_test)  
                 
 
 
 
 if __name__ == '__main__':
-    pass
+    
+    filename = 'gym_6kind_012_'
+    X_train = load(filename+"data.npy")
+    Y_train = load(filename+"labels.npy")
+    Y_p_train = load(filename+"labels_p.npy")
+    X_test = load(filename+"data_test.npy")
+    Y_test = load(filename+"labels_test.npy")
+    Y_p_test = load(filename+"labels_p_test.npy")
+    
+    X_train = pre.make_velocity(X_train)
+    X_test = pre.make_velocity(X_test)
+    
+    GAN = distanglingGAN()
+    GAN.train(X_train, Y_train, Y_p_train, X_test, Y_test, Y_p_test, n_batch=2000,batch_size=256)
+    
+    
+    
+    
