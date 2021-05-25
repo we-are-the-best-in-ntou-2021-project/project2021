@@ -150,33 +150,39 @@ class distanglingGAN():
         Y_rand0 = Y_p[idx]
         Y_rand0 = keras.utils.to_categorical(Y_rand0)
         
+        
         # output1(same person different actions) for discriminator (labels=True)
-        num_person_list = np.random.multinomial(batch_size//2, np.ones(4)/4,size=1)[0]
-        idx = np.concatenate([np.random.choice(idx_p[i][0], num_person_list[i]*2)for i in range(4)])
+        #num_person_list = np.random.multinomial(batch_size//2, np.ones(self.num_class)/self.num_class,size=1)[0]
+        num = batch_size//(self.num_class*2)
+        num_person_list = np.array([num,num,num,num])
+        idx = np.concatenate([np.random.choice(idx_p[i][0], num_person_list[i]*2)for i in range(self.num_class)])
         #idx.shape= (batch_size, )
         X_rand1 = X[idx]
-        #X_rand1.shape = (64,50,25,2)
+        #X_rand1.shape = (batch_size,frame,25,dim)
         input1 = X_rand1[0::2].reshape((1,batch_size//2,X_rand1.shape[1],X_rand1.shape[2]*X_rand1.shape[3]))
         input2 = X_rand1[1::2].reshape((1,batch_size//2,X_rand1.shape[1],X_rand1.shape[2]*X_rand1.shape[3]))
         X_rand1 = np.concatenate((input1,input2),axis=0)
         # X_rand1[0,:]: input1;  X_rand1[1,:]: input2
-        #Y_rand1 = np.ones((batch_size//2))
-    
-        
+        # Y_rand1 = np.ones((batch_size//2))
+           
         # output2(same actions different person) for discriminator (labels=False)
-        action_num = 3
-        num_action_list = np.random.multinomial(batch_size//2, np.ones(action_num)/action_num,size=1)[0]
-        idx = np.concatenate([np.random.choice(idx_a[i][0], num_action_list[i]*2)for i in range(action_num)])
+        idx = np.array([])
+        num_action_list = np.random.multinomial(batch_size//2, np.ones(self.num_actions)/self.num_actions,size=1)[0]
+        for i in range(0, self.num_actions):
+            for _ in range(num_action_list[i]):
+                while(True):
+                    tmp = np.random.choice(idx_a[i][0], 2)
+                    if(Y_p[tmp[0]] != Y_p[tmp[1]]):
+                        idx = np.concatenate((idx,tmp)).astype(int)
+                        break                
+
         X_rand2 = X[idx]
-        #X_rand1.shape = (64,50,25,2)
-        input1 = X_rand2[0::2].reshape((1,batch_size//2,X_rand2.shape[1],X_rand2.shape[2]*X_rand2.shape[3]))
-        input2 = X_rand2[1::2].reshape((1,batch_size//2,X_rand2.shape[1],X_rand2.shape[2]*X_rand2.shape[3]))
+        input1 = X_rand2[0::2].reshape((1,batch_size//2,X_rand1.shape[2],-1))
+        input2 = X_rand2[1::2].reshape((1,batch_size//2,X_rand1.shape[2],-1))
         X_rand2 = np.concatenate((input1,input2),axis=0)
-        # X_rand2[0,:]: input1; X_rand2[1,:]: input2
-        #Y_rand2 = np.zeros((batch_size//2))
 
         return X_rand0, Y_rand0, X_rand1, X_rand2
-        
+       
     
     
     def train(self, X_train, Y_train, Y_p_train, X_test, Y_test, Y_p_test, n_batch, batch_size):
