@@ -2,6 +2,7 @@
 distangling GAN
 
 id_classifier + actions_discriminator
+the best currently
 """
 
 
