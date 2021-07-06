@@ -52,8 +52,8 @@ class distanglingGAN():
         self.classifier.compile(loss='categorical_crossentropy', optimizer=Adam(lr=0.00008, beta_1=0.5), loss_weights=[1],metrics=['accuracy'])
         # For the combined model we will only train the encoder(generator)
         self.combined = self.__combined(self.encoder, self.discriminator, self.classifier)
-        self.combined.compile(loss=['categorical_crossentropy', 'binary_crossentropy'], loss_weights=[1, 1.5], 
-                      optimizer=Adam(lr=0.00003, beta_1=0.5))
+        self.combined.compile(loss=['categorical_crossentropy', 'binary_crossentropy'], loss_weights=[1, 0], 
+                      optimizer=Adam(lr=0.00002, beta_1=0.5))
 
     def __encoder(self, ):
         
@@ -204,10 +204,10 @@ class distanglingGAN():
         
     
     
-    def train(self, X_train, Y_train, Y_p_train, X_test, Y_test, Y_p_test, n_batch, batch_size):
+    def train(self, X_train, Y_train, Y_p_train, X_test, Y_test, Y_p_test, action_start, n_batch, batch_size):
         
         idx_p = [np.where(Y_p_train==i)for i in range(self.num_class)]
-        idx_a = [np.where(Y_train==i)for i in range(self.num_actions)]
+        idx_a = [np.where(Y_train==i+action_start)for i in range(self.num_actions)]
         Y_rand2 = np.ones((batch_size//2))
         Y_rand1 = np.zeros((batch_size//2))
         
@@ -238,7 +238,7 @@ class distanglingGAN():
             diff2 = X_rand2[1]
             input1 = np.concatenate((same1,diff1), axis=0)
             input2 = np.concatenate((same2,diff2), axis=0)
-            D_out = np.concatenate((Y_rand1,Y_rand2))           
+            D_out = np.concatenate((Y_rand2,Y_rand1))     #false, true      
             ## update generator
             self.combined.train_on_batch([input0, input1, input2], [C_out, D_out])     
             
@@ -246,17 +246,18 @@ class distanglingGAN():
             d_acc = (d_acc1+d_acc0)/2
             #print ('batch: %d, [Discriminator :: d_loss: %f, accuracy: %f], [ Classifier :: loss: %f, acc: %f]' % (batch, d_loss, d_acc, c_loss[0],c_loss[1]))
             # predict model every 10 epochs
-            if((batch+1)%50 == 0):
-                print ('batch: %d, [Discriminator :: d_loss: %f, accuracy: %f], [ Classifier :: loss: %f, acc: %f]' % (batch, d_loss, d_acc, c_loss[0],c_loss[1]))
-                if((batch+1) % 200 == 0):
-                    self.my_predict(X_test, Y_p_test)  
+            #if((batch+1)%50 == 0):
+            print ('batch: %d, [Discriminator :: d_loss: %f, accuracy: %f], [ Classifier :: loss: %f, acc: %f]' % (batch, d_loss, d_acc, c_loss[0],c_loss[1]))
+            if((batch+1) % 100 == 0):
+                self.my_predict(X_test, Y_p_test)  
                 
 
 
 
 if __name__ == '__main__':
     
-    filename = 'gym_6kind_012_'
+    filename = 'gym_6kind_345_1_'
+    action_start = 3
     X_train = load(filename+"data.npy")
     Y_train = load(filename+"labels.npy")
     Y_p_train = load(filename+"labels_p.npy")
@@ -272,7 +273,7 @@ if __name__ == '__main__':
     #X_test = pre.make_velocity(X_test)
     
     GAN0 = distanglingGAN()
-    GAN0.train(X_train, Y_train, Y_p_train, X_test, Y_test, Y_p_test, n_batch=2000,batch_size=144)
+    GAN0.train(X_train, Y_train, Y_p_train, X_test, Y_test, Y_p_test, action_start, n_batch=1000,batch_size=64)
     
 
     
