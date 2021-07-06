@@ -5,7 +5,7 @@ Created on Thu May 20 21:54:37 2021
 @author: User
 """
 """
-distangling GAN
+Actually, this is not a GAN. It's just a more complex cnn+dense model.
 """
 
 import keras
