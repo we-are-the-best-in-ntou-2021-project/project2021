@@ -37,7 +37,7 @@ session = InteractiveSession(config=config)
 class distanglingGAN():
     def __init__(self, frame = 50, dim = 100, num_actions = 3, num_class = 4):
         self.input_shape = (frame, dim)
-        self.latent_dim = 128
+        self.latent_dim = 256
         self.num_class = num_class
         self.num_actions = num_actions
         
@@ -46,14 +46,14 @@ class distanglingGAN():
         #self.encoder.compile(loss='binary_crossentropy', optimizer='Adam')
         # Build the discriminator
         self.discriminator = self.__discriminator()   
-        self.discriminator.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.00008, beta_1=0.5), loss_weights=[1],metrics=['accuracy'])
+        self.discriminator.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.0001), loss_weights=[1],metrics=['accuracy'])
         # Build the classifier
         self.classifier = self.__classifier()
-        self.classifier.compile(loss='categorical_crossentropy', optimizer=Adam(lr=0.00008, beta_1=0.5), loss_weights=[1],metrics=['accuracy'])
+        self.classifier.compile(loss='categorical_crossentropy', optimizer=Adam(lr=0.0001), loss_weights=[1],metrics=['accuracy'])
         # For the combined model we will only train the encoder(generator)
         self.combined = self.__combined(self.encoder, self.discriminator, self.classifier)
-        self.combined.compile(loss=['categorical_crossentropy', 'binary_crossentropy'], loss_weights=[1, 0], 
-                      optimizer=Adam(lr=0.00002, beta_1=0.5))
+        self.combined.compile(loss=['categorical_crossentropy', 'binary_crossentropy'], loss_weights=[1, 1], 
+                      optimizer=Adam(lr=0.0001))
 
     def __encoder(self, ):
         
@@ -66,7 +66,7 @@ class distanglingGAN():
         model.add(Conv1D(64,kernel_size=5,padding='same',activation="relu"))
         model.add(MaxPooling1D(pool_size=3))
         model.add(BatchNormalization())
-          
+        
         model.add(Conv1D(128,kernel_size=5,padding='same',activation="relu"))
         model.add(MaxPooling1D(pool_size=3))
         model.add(BatchNormalization())
@@ -84,10 +84,13 @@ class distanglingGAN():
         f2 = Input(shape=(self.latent_dim,))
         
         classifier = Sequential()
+        """
         classifier.add(Dense(256,input_dim=self.latent_dim))
         classifier.add(LeakyReLU(alpha=0.2))
+        """
         classifier.add(Dense(64))
         classifier.add(LeakyReLU(alpha=0.2))
+        
         classifier.add(Dense(self.num_actions,activation='softmax'))
         
         class1 = classifier(f1)
@@ -102,13 +105,13 @@ class distanglingGAN():
     def __classifier(self, ):
         
         model = Sequential()
-        
+        """
         model.add(Dense(256,input_dim=self.latent_dim))
         model.add(LeakyReLU(alpha=0.2))
-        
+        """
         model.add(Dense(64))
         model.add(LeakyReLU(alpha=0.2))
-
+        
         model.add(Dense(self.num_class, activation='softmax'))
         #model.summar()
         
@@ -201,8 +204,7 @@ class distanglingGAN():
 
 
         return X_rand0, Y_rand0, X_rand1, X_rand2
-        
-    
+           
     
     def train(self, X_train, Y_train, Y_p_train, X_test, Y_test, Y_p_test, action_start, n_batch, batch_size):
         
@@ -240,8 +242,9 @@ class distanglingGAN():
             input2 = np.concatenate((same2,diff2), axis=0)
             D_out = np.concatenate((Y_rand2,Y_rand1))     #false, true      
             ## update generator
-            self.combined.train_on_batch([input0, input1, input2], [C_out, D_out])     
-            
+            self.combined.train_on_batch([input0, input1, input2], [C_out, D_out])
+
+
             d_loss = (d_loss1+d_loss0)/2
             d_acc = (d_acc1+d_acc0)/2
             #print ('batch: %d, [Discriminator :: d_loss: %f, accuracy: %f], [ Classifier :: loss: %f, acc: %f]' % (batch, d_loss, d_acc, c_loss[0],c_loss[1]))
@@ -256,8 +259,8 @@ class distanglingGAN():
 
 if __name__ == '__main__':
     
-    filename = 'gym_6kind_345_1_'
-    action_start = 3
+    filename = 'gym_6kind_012_5_'
+    action_start = 0
     X_train = load(filename+"data.npy")
     Y_train = load(filename+"labels.npy")
     Y_p_train = load(filename+"labels_p.npy")
@@ -273,7 +276,7 @@ if __name__ == '__main__':
     #X_test = pre.make_velocity(X_test)
     
     GAN0 = distanglingGAN()
-    GAN0.train(X_train, Y_train, Y_p_train, X_test, Y_test, Y_p_test, action_start, n_batch=1000,batch_size=64)
+    GAN0.train(X_train, Y_train, Y_p_train, X_test, Y_test, Y_p_test, action_start, n_batch=5000,batch_size=64)
     
 
     
