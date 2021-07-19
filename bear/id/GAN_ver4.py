@@ -61,7 +61,7 @@ class distanglingGAN():
         self.classifier.compile(loss='categorical_crossentropy', optimizer=Adam(lr=0.0001), loss_weights=[1],metrics=['accuracy'])
         # For the combined model we will only train the encoder(generator)
         self.combined = self.__combined(self.encoder, self.discriminator, self.classifier, self.id_discriminator)
-        self.combined.compile(loss=['categorical_crossentropy', 'binary_crossentropy','binary_crossentropy'], loss_weights=[1.5, 1, 1], 
+        self.combined.compile(loss=['categorical_crossentropy', 'binary_crossentropy','binary_crossentropy'], loss_weights=[3, 1, 1], 
                       optimizer=Adam(lr=0.0001))
 
     def __encoder(self, ):
