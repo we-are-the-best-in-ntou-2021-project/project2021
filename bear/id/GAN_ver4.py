@@ -159,7 +159,7 @@ class distanglingGAN():
         return model
         
     
-    def my_predict(self, X_test, Y_test):
+    def my_predict(self, X_test, Y_test, batch):
         
         #reshape data
         X_test = X_test.reshape((X_test.shape[0],X_test.shape[1],-1))
@@ -167,11 +167,15 @@ class distanglingGAN():
         # predict
         Feature = self.encoder.predict(X_test)
         a = self.classifier.evaluate(Feature,Y_test,verbose=0)
-        print(a)
+        #print(a)
+
         predictions = self.classifier.predict_classes(Feature)
         Y_test = np.argmax(Y_test,axis=1)
-        print(pd.crosstab(Y_test,predictions,rownames=['label'],colnames=['predict']))
-    
+        if ((batch+1)%100 == 0):
+            print(a)
+            print(pd.crosstab(Y_test,predictions,rownames=['label'],colnames=['predict']))
+        
+        return a
     
     def __random_select(self,  X, Y, Y_p, batch_size, idx_p, idx_a):
         
@@ -232,6 +236,10 @@ class distanglingGAN():
         idx_a = [np.where(Y_train==i+action_start)for i in range(self.num_actions)]
         Y_rand2 = np.ones((batch_size//2))
         Y_rand1 = np.zeros((batch_size//2))
+        train_loss = np.zeros((n_batch))
+        train_acc = np.zeros((n_batch))
+        test_loss = np.zeros((n_batch))
+        test_acc = np.zeros((n_batch))
         
         for batch in range(n_batch):
             
@@ -277,14 +285,42 @@ class distanglingGAN():
             d_acc = (d_acc1+d_acc0)/2
             id_loss = (id_loss1+id_loss0)/2
             id_acc = (id_acc1+id_acc0)/2
-            #print ('batch: %d, [Discriminator :: d_loss: %f, accuracy: %f], [ Classifier :: loss: %f, acc: %f]' % (batch, d_loss, d_acc, c_loss[0],c_loss[1]))
-            # predict model every 10 epochs
-            #if((batch+1)%50 == 0):
-            print ('batch: %d, [Discriminator :: d_loss: %f, accuracy: %f], [ Classifier :: loss: %f, acc: %f], [id_dis :: loss %f, acc: %f]' % (batch, d_loss, d_acc, c_loss[0],c_loss[1], id_loss, id_acc))
-            if((batch+1) % 100 == 0):
-                self.my_predict(X_test, Y_p_test)  
-                
 
+            train_acc[batch] = c_loss[1]
+            train_loss[batch] = c_loss[0]
+            print ('batch: %d, [Discriminator :: d_loss: %f, accuracy: %f], [ Classifier :: loss: %f, acc: %f], [id_dis :: loss %f, acc: %f]' % (batch, d_loss, d_acc, c_loss[0],c_loss[1], id_loss, id_acc))
+            #if((batch+1) % 100 == 0):
+            a = self.my_predict(X_test, Y_p_test, batch)
+            test_acc[batch] = a[1]
+            test_loss[batch] = a[0]
+        
+        train_loss[0] = train_loss[1]
+        train_acc[0]= train_acc[1]
+        test_loss[0] = test_loss[1]
+        test_acc[0] = test_acc[1]
+        
+        plt.figure(figsize=(10,5))
+        plt.subplot(1,2,1)
+        plt.plot(train_loss,label='train_loss')
+        plt.plot(test_loss,label='test_loss')
+        plt.legend()
+        plt.xlabel('batch')
+        plt.ylabel('loss')
+        plt.grid(True)
+        plt.subplot(1,2,2)
+        plt.plot(train_acc,label='train_accuracy')
+        plt.plot(test_acc,label='test_acuracy')
+        plt.legend()
+        plt.xlabel('batch')
+        plt.ylabel('accuracy')
+        plt.grid(True)
+        plt.show()
+"""             
+        print(train_acc)
+        print(train_loss)
+        print(test_acc)
+        print(test_loss)
+"""
 
 
 if __name__ == '__main__':
@@ -306,7 +342,7 @@ if __name__ == '__main__':
     #X_test = pre.make_velocity(X_test)
     
     GAN0 = distanglingGAN()
-    GAN0.train(X_train, Y_train, Y_p_train, X_test, Y_test, Y_p_test, action_start, n_batch=5000,batch_size=64)
+    GAN0.train(X_train, Y_train, Y_p_train, X_test, Y_test, Y_p_test, action_start, n_batch=8000,batch_size=64)
     
 
     
