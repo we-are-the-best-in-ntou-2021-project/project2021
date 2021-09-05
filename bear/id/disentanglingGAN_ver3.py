@@ -60,11 +60,11 @@ class distanglingGAN():
         self.classifier.compile(loss='categorical_crossentropy', optimizer=Adam(lr=0.0001), loss_weights=[1],metrics=['accuracy'])
         # For the combined model we will only train the encoder(generator)
         self.combined = self.__combined(self.encoder, self.discriminator, self.classifier)
-        self.combined.compile(loss=['categorical_crossentropy', self.myloss], loss_weights=[1, 0], 
+        self.combined.compile(loss=['categorical_crossentropy', 'binary_crossentropy'], loss_weights=[1,0], 
                       optimizer=Adam(lr=0.0001))
         
     def myloss(self,y_true,y_pred):
-        return tf.negative(K.categorical_crossentropy(y_true,y_pred))
+        return tf.negative(K.binary_crossentropy(y_true,y_pred))
     
     def __encoder(self, ):
         
@@ -230,10 +230,10 @@ class distanglingGAN():
         train_dis_acc = np.zeros((n_batch//50))
         test_loss = np.zeros((n_batch//50))
         test_acc = np.zeros((n_batch//50))
-        scr = np.zeros((n_batch//1000))
-        scr_dense = np.zeros((n_batch//1000))
+        #scr = np.zeros((n_batch//1000))
+        #scr_dense = np.zeros((n_batch//1000))
         i = 0
-        j = 0
+        #j = 0
         
         for batch in range(n_batch):
             
@@ -262,14 +262,15 @@ class distanglingGAN():
             diff2 = X_rand2[1]
             input1 = np.concatenate((same1,diff1), axis=0)
             input2 = np.concatenate((same2,diff2), axis=0)
-            D_out = np.concatenate((Y_rand1,Y_rand2))     #false, true      
+            D_out = np.concatenate((Y_rand2,Y_rand1))     #false, true      
             ## update generator
             self.combined.train_on_batch([input0, input1, input2], [C_out, D_out])
             d_loss = (d_loss1+d_loss0)/2
             d_acc = (d_acc1+d_acc0)/2
 
-            print ('batch: %d, [Discriminator :: d_loss: %f, accuracy: %f], [ Classifier :: loss: %f, acc: %f]' % (batch, d_loss, d_acc, c_loss[0],c_loss[1]))
+            #print ('batch: %d, [Discriminator :: d_loss: %f, accuracy: %f], [ Classifier :: loss: %f, acc: %f]' % (batch, d_loss, d_acc, c_loss[0],c_loss[1]))
             if((batch+1) % 50 == 0):
+                print ('batch: %d, [Discriminator :: d_loss: %f, accuracy: %f], [ Classifier :: loss: %f, acc: %f]' % (batch, d_loss, d_acc, c_loss[0],c_loss[1]))
                 a = self.my_predict(X_test, Y_p_test)
                 train_acc[i] = c_loss[1]
                 train_acc[i] = c_loss[1]
@@ -283,7 +284,11 @@ class distanglingGAN():
                 #scr[j] = self.testsvm(X_train,Y_p_train,X_test,Y_p_test)
                 #scr_dense[j] = a[1]
                 #j = j + 1
-        self.tsneshow(X_train, Y_train, X_p_test, Y_p_test)    
+        #self.meanAndMae(X_train, Y_train, Y_p_train, X_test, Y_p_test, 0, action_start)
+        #self.meanAndMae(X_train, Y_train, Y_p_train, X_test, Y_p_test, 1, action_start)
+        #self.meanAndMae(X_train, Y_train, Y_p_train, X_test, Y_p_test, 2, action_start)
+        #self.meanAndMae(X_train, Y_train, Y_p_train, X_test, Y_p_test, 3, action_start)
+        #self.tsneshow(X_train, Y_p_train, X_test, Y_p_test)    
         # plot 
         plt.figure(figsize=(10,5))
         plt.subplot(1,2,1)
@@ -303,8 +308,8 @@ class distanglingGAN():
         plt.ylabel('accuracy')
         plt.grid(True)
         plt.show()     
-        print(scr_dense)
-        print(scr)
+        #print(scr_dense)
+        #print(scr)
         pre.send_mes_to_bot(a)
 
     def tsneshow(self, x_train, y_train, x_test, y_test):
@@ -321,22 +326,23 @@ class distanglingGAN():
         x_min, x_max = X_tsne.min(0), X_tsne.max(0)
         X_norm = (X_tsne-x_min) / (x_max-x_min)
         plt.figure(figsize=(10, 10))
-        color_yellow=(1.0, 1.0, 0.0, 0.2)
-        color_red=(1.0, 0.0, 0.0, 0.2)
-        color_blue=(0, 0, 1.0, 0.2)
-        color_black=(0, 0, 0, 0.2)
-        color_gray=(0.5,0.5,0.41,0.2)
         
+        color_yellow=(1.0, 1.0, 0.0, 0.4)
+        color_red=(1.0, 0.0, 0.0, 0.4)
+        color_blue=(0, 0, 1.0, 0.4)
+        color_black=(0, 0, 0, 0.4)
+        color_orange=(1.0,0.27,0.0,0.4)
+        color_cyan = (0, 1.0, 1.0, 0.2)
         color_green=(0, 1.0, 0, 0.2)
         color_purple=(1.0, 0, 1.0, 0.2)
-        color_cyan = (0, 1.0, 1.0, 0.2)
-        color_skin=(0.9, 0.8, 0.7, 0.2)
+        color_skin=(0.9, 0.8, 0.7, 0.2)      
+        color_gray=(0.5,0.5,0.41,0.4)     
         color_brown=(0.368, 0.149, 0.07, 0.2)
         
-        colormap = np.array([color_yellow, color_red, color_blue, color_black, color_gray, 
-                             color_green, color_purple, color_cyan, color_skin, color_brown])
+        colormap = np.array([color_yellow, color_red, color_blue, color_black, color_brown, 
+                             color_green, color_purple, color_cyan, color_skin, color_gray])
         #colormap = np.array([color_yellow, color_red, color_blue, color_black, 
-        #                     color_green, color_purple, color_cyan, color_skin])
+        #                     color_orange, color_cyan, color_purple, color_skin])
         plt.scatter(X_norm[:,0], X_norm[:,1], c=colormap[y],marker='.')
         plt.show()
         
@@ -355,21 +361,72 @@ class distanglingGAN():
         prdict = clf.predict(Feature_test)
         
         return ((np.sum(prdict == Y_test))/Y_test.shape[0])
+
         
-         
-
-
-if __name__ == '__main__':
+    def meanAndMae(self, X_train, Y_train, Y_p_train, X_test, Y_p_test, id_check, action_start):
+        
+        filter_id_train = (Y_p_train==id_check)
+        Y_train = Y_train[filter_id_train]
+        X_train = X_train[filter_id_train]
+        X_train = X_train.reshape((X_train.shape[0], X_train.shape[1],-1))
+        feature_train = self.encoder.predict(X_train)
+        mean_all_train = np.mean(feature_train,axis=0)
+        mean_train = np.zeros((self.num_actions, feature_train.shape[1]))
+        for i in range(self.num_actions):
+            i = i+action_start
+            tmp = feature_train[Y_train == i]
+            mean_train[i] = np.mean(tmp,axis=0)
+        
+        filter_id_test = (Y_p_test==id_check)
+        X_test = X_test[filter_id_test]        
+        X_test = X_test.reshape((X_test.shape[0],X_test.shape[1],-1))
+        feature_test = self.encoder.predict(X_test)
+        mean_test = np.mean(feature_test, axis=0)
+        
+        print("id check"+str(id_check))
+        print("\n----test_alltrain mean distence mae----")
+        print(self.mae(mean_all_train, mean_test))
+        print("----train actions distence mae----")
+        print("action0 action1:")
+        print(self.mae(mean_train[0],mean_train[1]))
+        print("action1 action2:")
+        print(self.mae(mean_train[2],mean_train[1]))
+        print("action0 action2:")
+        print(self.mae(mean_train[2],mean_train[0]))
+        print("------------------------------------------------------------")
     
-    filename = 'gym_6kind_4p_012_5_'
+    def mae(self, A, B):
+        return np.sum(np.abs(A-B))
+        
+        
+if __name__ == '__main__':
+    """
+    filename = 'D:/IndependentStudy/directly_behind_phone/'
     action_start = 0
     X_train = load(filename+"data.npy")
-    Y_train = load(filename+"labels.npy")
-    Y_p_train = load(filename+"labels_p.npy")
+    Y_train = load(filename+"labels_action.npy")
+    Y_p_train = load(filename+"labels_ID.npy")
+    filename = 'gym_directily_behind_phone_012_5_'
     X_test = load(filename+"data_test.npy")
     Y_test = load(filename+"labels_test.npy")
     Y_p_test = load(filename+"labels_p_test.npy")
+    """
     
+    label_test = 0
+    action_start = 2
+    
+    data = load("D:/IndependentStudy/directly_behind_phone/data.npy")
+    labels_a = load("D:/IndependentStudy/directly_behind_phone/labels_action.npy")
+    labels_p = load("D:/IndependentStudy/directly_behind_phone/labels_ID.npy")
+
+    X_test = data[labels_a == label_test]
+    Y_p_test = labels_p[labels_a == label_test]
+    Y_test = labels_a[labels_a == label_test]
+
+    filter_012 = (labels_a == 2)|(labels_a==3)|(labels_a==4)
+    Y_p_train = labels_p[filter_012]
+    Y_train = labels_a[filter_012]
+    X_train = data[filter_012]
     
     
     tmp = pre.make_velocity(X_train)
@@ -382,6 +439,8 @@ if __name__ == '__main__':
     
     
     GAN0 = distanglingGAN(frame = 50, dim = 100, num_actions = 3, num_class = 4)
-    GAN0.train(X_train, Y_train, Y_p_train, X_test, Y_test, Y_p_test, action_start, n_batch=4000,batch_size=64)
+    GAN0.train(X_train, Y_train, Y_p_train, X_test, Y_test, Y_p_test, action_start, n_batch=8000,batch_size=64)
     
-   
+    
+
+    
